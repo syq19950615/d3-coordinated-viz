@@ -1,7 +1,7 @@
 /* Stylesheet by Yuqi Shi, 2019 */
 
-.countries {
-    fill: #FFF;
+.regions {
+    fill: #999;
     stroke: #CCC;
     stroke-width: 2px;
 }
@@ -12,7 +12,7 @@
     stroke-width: 1px;
 }
 
-.gratBackground {
+.gratBackground{
     fill: #D5E3FF;
 }
 
