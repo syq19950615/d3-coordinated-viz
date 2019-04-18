@@ -5,7 +5,11 @@
 //pseudo-global variables
 var attrArray = ["drug poisoning death", "Population (k)", "drug poisoning death rate (per 100,000 inhabitant)", "violent crimes rate (per 100,000 inhabitant)", "property crimes rate (per 100,000 inhabitant)"]; //list of attributes
 var expressed = attrArray[0]; //initial attribute
-
+var attr0 = attrArray[0];
+var attr1 = attrArray[1];
+var attr2 = attrArray[2];
+var attr3 = attrArray[3];
+var attr4 = attrArray[4];
 
 //chart frame dimensions
 var chartWidth = window.innerWidth * 0.425,
@@ -63,9 +67,11 @@ function setMap(){
 	
     //join csv data to GeoJSON enumeration units
     US_states = joinData(US_states, csvData);
+	//console.log(US_states)
 	
     //create the color scale
     var colorScale = makeColorScale(csvData);
+	//console.log(csvData)
 	
 	//create a scale to size bars proportionally to frame and for axis
 	var maxattr = d3.max(csvData, function(d){return parseFloat(d[expressed])});
@@ -75,8 +81,8 @@ function setMap(){
     //add enumeration units to the map
     setEnumerationUnits(US_states, map, path, colorScale);
 	createDropdown(csvData);
-	
         //add coordinated visualization to the map
+		//console.log(csvData)
         setChart(csvData, colorScale);	
 	};
 }; //end of setMap()
@@ -109,13 +115,13 @@ function joinData(US_states, csvData){
 	for (var i=0; i<csvData.length; i++){
         var csvRegion = csvData[i]; //the current region
         var csvKey = csvRegion.diss_me; //the CSV primary key
-
+		//console.log(csvKey)
         //loop through geojson regions to find correct region
         for (var a=0; a<US_states.length; a++){
 
             var geojsonProps = US_states[a].properties; //the current region geojson properties
             var geojsonKey = geojsonProps.diss_me; //the geojson primary key
-
+			//console.log(geojsonKey)
             //where primary keys match, transfer csv data to geojson properties object
             if (parseInt(geojsonKey) == parseInt(csvKey)){
 	
@@ -131,6 +137,7 @@ function joinData(US_states, csvData){
 };
 
 function setEnumerationUnits(US_states, map, path, colorScale){
+	//console.log(US_states)
     var regions = map.selectAll(".regions")
         .data(US_states)
         .enter()
@@ -148,14 +155,20 @@ function setEnumerationUnits(US_states, map, path, colorScale){
         .on("mouseout", function(d){
             dehighlight(d.properties);
         })
+		.on("click", function(d){
+			clickpop(d.properties);
+		console.log(d.properties);
+		})
         .on("mousemove", moveLabel);
     var desc = regions.append("desc")
         .text('{"stroke": "#000", "stroke-width": "0.5px"}');
+	//console.log(colorScale)
 };
 
 
 //function to create color scale generator
 function makeColorScale(data){
+	//console.log(data)
     var colorClasses = [
         "#D4B9DA",
         "#C994C7",
@@ -268,6 +281,7 @@ function changeAttribute(attribute, csvData){
 		.range([585, 0])
 		.domain([0, maxattr*1.05]);
 		
+	//console.log(maxattr*1.05)
 	d3.select(".axis").remove();
 	//create vertical axis generator
     var yAxis = d3.axisLeft()
@@ -356,13 +370,14 @@ function setChart(csvData, colorScale){
             return b[expressed]-a[expressed]
         })
         .attr("class", function(d){
+			//console.log(d)
             return "bar " + d.adm1_code;
         })
         .attr("width", chartInnerWidth / csvData.length - 1)
         .on("mouseover", highlight)
         .on("mouseout", dehighlight)
         .on("mousemove", moveLabel)
-		
+		.on("click", clickpop);
     var desc = bars.append("desc")
         .text('{"stroke": "none", "stroke-width": "0px"}');
 
@@ -424,7 +439,40 @@ function dehighlight(props){
     };
     d3.select(".infolabel")
         .remove();
+    d3.select(".popwindow")
+        .remove();
 };
+
+function clickpop(props){
+	var selected = d3.selectAll("." + props.adm1_code)
+        .style("stroke", "orange")
+        .style("stroke-width", "4");
+	console.log(props)
+	setPopup(props);
+};
+
+function setPopup(props){
+	var popAttribute = "</b>" + attr0 +
+        "</h1><b>" + props[attr0] + "</h1>"; 
+/* 		+ props[attr1] + 
+		"</h1><b>" + attr1 + 
+		"</b>" + props[attr2] + 
+		"</h1><b>" + attr2 + 
+		"</b>" + props[attr3] + 
+		"</h1><b>" + attr3 + 
+		"</b>" + props[attr4] + 
+		"</h1><b>" + attr4 + "</b>"; */
+	var info = svg.append("text").attr("class","info");
+	info.text(attr0);
+	var popwindow = d3.select("body")
+        .append("div")
+        .attr("class", "popwindow")
+        .attr("id", props.adm1_code + "_label")
+        .html(popAttribute);
+    var popregionName = popwindow.append("div")
+        .attr("class", "labelname")
+        .html(props.name);		
+};		
 		
 //function to create dynamic label
 function setLabel(props){
@@ -451,7 +499,7 @@ function moveLabel(){
         .node()
         .getBoundingClientRect()
         .width;
-		
+	//console.log(labelWidth)
     //use coordinates of mousemove event to set label coordinates
     var x1 = d3.event.clientX + 10,
         y1 = d3.event.clientY - 75,
